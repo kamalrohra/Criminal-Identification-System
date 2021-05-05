@@ -50,15 +50,18 @@ def goBack():
 def basicPageSetup(pageNo):
     global left_frame, right_frame, heading
 
-    back_img = tk.PhotoImage(file="back.png")
+    #-----------back button----------------------------
+    back_img = tk.PhotoImage(file="back.png") 
     back_button = tk.Button(pages[pageNo], image=back_img, bg="#202d42", bd=0, highlightthickness=0,
            activebackground="#202d42", command=goBack)
     back_button.image = back_img
     back_button.place(x=10, y=10)
 
+    #-------------heading text------------------------
     heading = tk.Label(pages[pageNo], fg="white", bg="#202d42", font="Arial 20 bold", pady=10)
     heading.pack()
 
+    #-------------background frame for displaying components and rendering components------------------------
     content = tk.Frame(pages[pageNo], bg="#202d42", pady=20)
     content.pack(expand="true", fill="both")
 
@@ -73,12 +76,13 @@ def basicPageSetup(pageNo):
     content.grid_columnconfigure(1, weight=1, uniform="group1")
     content.grid_rowconfigure(0, weight=1)
 
-
+#function to diaplay the image in the tkinter window
 def showImage(frame, img_size):
     global img_label, left_frame
 
     img = cv2.resize(frame, (img_size, img_size))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    #----------converting in required fromat to diaply using tkintr---------------------------------------
     img = Image.fromarray(img)
     img = ImageTk.PhotoImage(img)
     if (img_label == None):
@@ -89,11 +93,12 @@ def showImage(frame, img_size):
         img_label.configure(image=img)
         img_label.image = img
 
-
+#-------creating slides for multiple images uploaded------------------------
 def getNewSlide(control):
     global img_list, current_slide
 
     if(len(img_list) > 1):
+        #--selecting the proper image---------
         if(control == "prev"):
             current_slide = (current_slide-1) % len(img_list)
         else:
@@ -104,7 +109,7 @@ def getNewSlide(control):
 
         slide_caption.configure(text = "Image {} of {}".format(current_slide+1, len(img_list)))
 
-
+#---selecting multiple images to register a criminal
 def selectMultiImage(opt_menu, menu_var):
     global img_list, current_slide, slide_caption, slide_control_panel
 
@@ -181,7 +186,7 @@ def register(entries, required, menu_var):
             entry_data[entry[0]] = val.lower()
 
 
-    # Setting Directory
+    # Setting Directory(doubt)
     path = os.path.join('face_samples', "temp_criminal")
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -217,6 +222,7 @@ def register(entries, required, menu_var):
 
             goBack()
         else:
+            #if error occurs in storing data
             shutil.rmtree(path, ignore_errors=True)
             messagebox.showerror("Database Error", "Some error occured while storing data.")
 
@@ -281,12 +287,13 @@ def getPage1():
             label.tag_configure("star", foreground="yellow", font="Arial 13 bold")
             label.insert("end", "  *", "star")
         label.configure(state="disabled")
-
+        #---if for setting up entries and labels
         if(i != ip_len-1):
             ent = tk.Entry(row, font="Arial 13", selectbackground="#90ceff")
             ent.pack(side="right", expand="true", fill="x", padx=10)
             entries.append((field, ent))
         else:
+            #---else for setting up menubar
             menu_var.set("Image 1")
             choices = ["Image 1"]
             opt_menu = tk.OptionMenu(row, menu_var, *choices)
@@ -299,8 +306,9 @@ def getPage1():
            bg="#2196f3", fg="white", pady=10, padx=30, bd=0, highlightthickness=0, activebackground="#091428",
            activeforeground="white").pack(pady=25)
 
-
+#----------------rendering the criminals profile ----------------------
 def showCriminalProfile(name):
+    #basic setup
     top = tk.Toplevel(bg="#202d42")
     top.title("Criminal Profile")
     top.geometry("1500x900+%d+%d"%(root.winfo_x()+10, root.winfo_y()+10))
@@ -313,6 +321,7 @@ def showCriminalProfile(name):
     content.grid_columnconfigure(1, weight=5, uniform="group1")
     content.grid_rowconfigure(0, weight=1)
 
+    #retriving data and setting profile image
     (id, crim_data) = retrieveData(name)
 
     path = os.path.join("profile_pics", "criminal %d.png"%id)
@@ -335,7 +344,7 @@ def showCriminalProfile(name):
         val = "---" if (item[1]=="") else item[1]
         tk.Label(info_frame, text=val.capitalize(), fg="white", font="Arial 15", bg="#202d42").grid(row=i, column=2, sticky='w')
 
-
+#selectng the criminal training the model and recognize the faces
 def startRecognition():
     global img_read, img_label
 
@@ -411,77 +420,6 @@ def getPage2():
            activeforeground="white").grid(row=0, column=1, padx=25, pady=25)
 
 
-def videoLoop(model, names):
-    global thread_event, left_frame, webcam, img_label
-    webcam = cv2.VideoCapture(0)
-    old_recognized = []
-    crims_found_labels = []
-    img_label = None
-
-    try:
-        while not thread_event.is_set():
-            # Loop until the camera is working
-            while (True):
-                # Put the image from the webcam into 'frame'
-                (return_val, frame) = webcam.read()
-                if (return_val == True):
-                    break
-                else:
-                    print("Failed to open webcam. Trying again...")
-
-            # Flip the image (optional)
-            frame = cv2.flip(frame, 1, 0)
-            # Convert frame to grayscale
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Detect Faces
-            face_coords = detect_faces(gray_frame)
-            (frame, recognized) = recognize_face(model, frame, gray_frame, face_coords, names)
-
-            # Recognize Faces
-            recog_names = [item[0] for item in recognized]
-            if(recog_names != old_recognized):
-                for wid in right_frame.winfo_children():
-                    wid.destroy()
-                del(crims_found_labels[:])
-
-                for i, crim in enumerate(recognized):
-                    crims_found_labels.append(tk.Label(right_frame, text=crim[0], bg="orange",
-                                                    font="Arial 15 bold", pady=20))
-                    crims_found_labels[i].pack(fill="x", padx=20, pady=10)
-                    crims_found_labels[i].bind("<Button-1>", lambda e, name=crim[0]: showCriminalProfile(name))
-
-                old_recognized = recog_names
-
-            # Display Video stream
-            img_size = min(left_frame.winfo_width(), left_frame.winfo_height()) - 20
-
-            showImage(frame, img_size)
-
-    except RuntimeError:
-        print("[INFO]Caught Runtime Error")
-    except tk.TclError:
-        print("[INFO]Caught Tcl Error")
-
-
-## video surveillance Page ##
-def getPage3():
-    global active_page, video_loop, left_frame, right_frame, thread_event, heading
-    active_page = 3
-    pages[3].lift()
-
-    basicPageSetup(3)
-    heading.configure(text="Video Surveillance")
-    right_frame.configure(text="Detected Criminals")
-    left_frame.configure(pady=40)
-
-    (model, names) = train_model()
-    print('Training Successful. Detecting Faces')
-
-    thread_event = threading.Event()
-    thread = threading.Thread(target=videoLoop, args=(model, names))
-    thread.start()
-
 
 ######################################## Home Page ####################################
 tk.Label(pages[0], text="Criminal Identification System", fg="white", bg="#202d42",
@@ -495,7 +433,7 @@ btn_frame.pack()
 
 tk.Button(btn_frame, text="Register Criminal", command=getPage1)
 tk.Button(btn_frame, text="Detect Criminal", command=getPage2)
-tk.Button(btn_frame, text="Video Surveillance", command=getPage3)
+# tk.Button(btn_frame, text="Video Surveillance", command=getPage3)
 
 for btn in btn_frame.winfo_children():
     btn.configure(font="Arial 20", width=17, bg="#2196f3", fg="white",

@@ -41,7 +41,7 @@ def train_model():
     return (model, names)
 
 
-# Part 2: Use fisherRecognizer on camera stream
+#detects faces
 def detect_faces(gray_frame):
     global size, haar_cascade
 
@@ -79,4 +79,3 @@ def recognize_face(model, frame, gray_frame, face_coords, names):
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     return (frame, recognized)
-

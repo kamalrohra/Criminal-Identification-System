@@ -16,7 +16,7 @@ def registerCriminal(img, path, img_num):
         face_i = faces[0]
         (x, y, w, h) = [v * size for v in face_i]
 
-        face = gray[y:y + h, x:x + w]
+        face = gray[y:y + h, x:x + w]    # getting face co-ordinates
         face = cv2.resize(face, (im_width, im_height))
 
         print("Saving training sample " + str(img_num)+".1")
